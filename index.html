@@ -70,6 +70,7 @@ a { color: inherit; }
 .btn.ghost { box-shadow: none; border-color: transparent; background: transparent; color: var(--muted); }
 .btn.ghost:hover { border-color: var(--line); color: var(--ink); transform: none; box-shadow: none; }
 .btn.small { padding: 5px 10px; font-size: 13px; border-radius: 10px; }
+.btn { white-space: nowrap; }
 .btn[disabled] { opacity: .5; cursor: not-allowed; transform: none; }
 
 /* hero / home */
@@ -108,7 +109,7 @@ a { color: inherit; }
 .card { position: relative; border: 2px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 6px 6px 0 var(--shadow); padding: 22px 18px 16px; margin-top: 24px; }
 .sticker { position: absolute; top: -18px; right: 14px; width: 56px; height: 56px; border-radius: 50%; background: var(--sun); border: 2px solid var(--line); display: grid; place-items: center; font-size: 28px; transform: rotate(10deg); box-shadow: 3px 3px 0 var(--shadow); }
 .card-head { padding-right: 60px; }
-.card-head h2 { font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1.2; overflow-wrap: anywhere; }
+.card-head h2 { font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1.2; word-break: keep-all; overflow-wrap: anywhere; }
 .meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 6px; font-size: 13px; color: var(--muted); }
 .meta .pill { border: 2px solid var(--line); border-radius: 999px; padding: 1px 8px; font-weight: 700; color: var(--ink); background: var(--paper); font-variant-numeric: tabular-nums; }
 .options { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
@@ -119,7 +120,7 @@ a { color: inherit; }
 .option .mark { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center; font-size: 13px; font-weight: 700; background: var(--paper); }
 .option.picked .mark { background: var(--oc); color: #1f1a4d; }
 .option.picked { box-shadow: 3px 3px 0 var(--shadow); }
-.option .label { flex: 1; min-width: 0; font-weight: 500; overflow-wrap: anywhere; }
+.option .label { flex: 1; min-width: 0; font-weight: 500; word-break: keep-all; overflow-wrap: anywhere; }
 .option .num { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; display: flex; gap: 8px; align-items: baseline; }
 .option .num small { color: var(--muted); font-weight: 500; }
 .option .crown { font-size: 18px; }
