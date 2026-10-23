@@ -94,6 +94,13 @@ a { color: inherit; }
 .opt-row { display: flex; gap: 8px; align-items: center; }
 .opt-row .swatch { width: 14px; height: 14px; border-radius: 4px; border: 2px solid var(--line); flex: none; }
 .opt-row .rm { border: none; background: transparent; color: var(--muted); font-size: 18px; padding: 4px; }
+.check { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border: 2px dashed var(--line); border-radius: 12px; cursor: pointer; background: var(--paper-2); }
+.check input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); flex: none; cursor: pointer; }
+.check small { color: var(--muted); }
+.addbox { margin-top: 16px; padding: 14px 16px; border: 2px dashed var(--line); border-radius: 16px; background: var(--paper-2); display: flex; flex-direction: column; gap: 8px; }
+.addbox-title { font-weight: 700; }
+.addrow { display: flex; gap: 8px; }
+.addrow .input { background: var(--paper); }
 .panel-foot { display: flex; gap: 8px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
 .panel-foot .spacer { flex: 1; }
 .err { color: var(--accent); font-size: 13px; font-weight: 700; }
@@ -119,6 +126,7 @@ a { color: inherit; }
 .option .row { position: relative; display: flex; align-items: center; gap: 10px; padding: 12px 14px; min-width: 0; }
 .option .mark { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center; font-size: 13px; font-weight: 700; background: var(--paper); }
 .option.picked .mark { background: var(--oc); color: #1f1a4d; }
+.option .tag { font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 1px 6px; border-radius: 999px; background: var(--paper); border: 1.5px solid var(--line); color: var(--muted); white-space: nowrap; }
 .option.picked { box-shadow: 3px 3px 0 var(--shadow); }
 .option .label { flex: 1; min-width: 0; font-weight: 500; word-break: keep-all; overflow-wrap: anywhere; }
 .option .num { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; display: flex; gap: 8px; align-items: baseline; }
@@ -191,6 +199,10 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
           <span class="lbl">선택지 (2~6개)</span>
           <div class="opts" id="opts"></div>
         </div>
+        <label class="check" for="allowAdd">
+          <input type="checkbox" id="allowAdd">
+          <span><strong>참여자도 선택지를 추가할 수 있게</strong><br><small>투표하러 온 사람이 마음에 드는 게 없으면 직접 항목을 제안합니다. 최대 12개까지 추가돼요.</small></span>
+        </label>
         <div class="panel-foot">
           <button class="btn small" type="button" id="addOpt">+ 선택지 추가</button>
           <span class="err" id="formErr" role="alert"></span>
@@ -208,6 +220,14 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   <!-- POLL -->
   <section id="poll" hidden>
     <article class="card" id="card"></article>
+    <form class="addbox" id="addBox" hidden novalidate>
+      <span class="addbox-title">🙋 없는 게 있나요? 직접 추가하세요</span>
+      <div class="addrow">
+        <input class="input" id="addInput" maxlength="40" placeholder="예: 샐러드" autocomplete="off" aria-label="새 선택지">
+        <button class="btn sun" type="submit" id="addBtn">추가</button>
+      </div>
+      <span class="hint" id="addHint">추가한 선택지는 모두에게 바로 보여요.</span>
+    </form>
     <div class="share" id="share">
       <div>
         <span class="lbl">이 링크를 뿌리세요</span>
@@ -221,7 +241,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     </div>
   </section>
 
-  <p class="foot">한 기기에서 한 번만 투표할 수 있어요. 집계는 공개 카운터 서버(Abacus)에 저장되며, 질문과 선택지는 링크 자체에 담겨 있습니다.</p>
+  <p class="foot">한 기기에서 한 번만 투표할 수 있어요. 집계는 공개 카운터 서버(Abacus)에, 참여자가 추가한 선택지는 공개 텍스트 저장소(textdb)에 저장되며, 질문과 기본 선택지는 링크 자체에 담겨 있습니다.</p>
 </div>
 
 <div class="cheers" id="cheerBar" hidden><div class="tray" id="cheerTray" role="group" aria-label="응원 보내기"></div></div>
@@ -282,7 +302,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     [...optsBox.children].forEach((r, i) => { r.querySelector('.swatch').style.background = COLORS[i]; r.querySelector('input').placeholder = '선택지 ' + (i + 1); });
     $('addOpt').disabled = optsBox.children.length >= 6;
   }
-  function resetForm() { optsBox.replaceChildren(); addOptRow(); addOptRow(); qInput.value = ''; emojiInput.value = EMOJI_PRESETS[Math.floor(Math.random() * EMOJI_PRESETS.length)]; formErr.textContent = ''; }
+  function resetForm() { optsBox.replaceChildren(); addOptRow(); addOptRow(); qInput.value = ''; $('allowAdd').checked = false; emojiInput.value = EMOJI_PRESETS[Math.floor(Math.random() * EMOJI_PRESETS.length)]; formErr.textContent = ''; }
   $('addOpt').addEventListener('click', () => addOptRow());
   $('pollForm').addEventListener('submit', (ev) => {
     ev.preventDefault(); formErr.textContent = '';
@@ -291,7 +311,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     if (q.length < 2) { formErr.textContent = '질문을 적어주세요'; qInput.focus(); return; }
     if (o.length < 2) { formErr.textContent = '선택지는 2개 이상 필요해요'; return; }
     if (new Set(o).size !== o.length) { formErr.textContent = '같은 선택지가 두 번 있어요'; return; }
-    const poll = { i: rid(), q, e: (emojiInput.value.trim() || '🗳️').slice(0, 4), o, t: Date.now() };
+    const poll = { i: rid(), q, e: (emojiInput.value.trim() || '🗳️').slice(0, 4), o, t: Date.now(), a: $('allowAdd').checked ? 1 : 0 };
     const mine = store.get('lp_mine', []); mine.unshift({ i: poll.i, q: poll.q, e: poll.e, t: poll.t, h: b64.enc(poll) }); store.set('lp_mine', mine.slice(0, 20));
     location.hash = 'p=' + b64.enc(poll);
     toast('투표가 열렸어요! 링크를 뿌려보세요 ⚡'); burst(innerWidth / 2, 140);
@@ -301,64 +321,109 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     $('mineList').replaceChildren(...mine.map(m => el('li', {}, el('a', { href: '#p=' + m.h }, el('span', { text: m.e || '🗳️' }), el('span', { class: 'q', text: m.q }), el('span', { class: 'when', text: timeAgo(m.t) })))));
   }
 
-  /* ---------- counter API ---------- */
+  /* ---------- counter API (vote tallies) ---------- */
   const ns = (poll) => 'lightning-poll-' + poll.i;
-  async function getCount(poll, i) {
-    const r = await fetch(`${API}/get/${ns(poll)}/opt${i}`, { cache: 'no-store' });
+  async function getCount(poll, key) {
+    const r = await fetch(`${API}/get/${ns(poll)}/${key}`, { cache: 'no-store' });
     if (r.status === 404) return 0;
     if (!r.ok) throw new Error('get ' + r.status);
     const j = await r.json(); return Number(j.value) || 0;
   }
-  async function hit(poll, i) {
-    const r = await fetch(`${API}/hit/${ns(poll)}/opt${i}`, { cache: 'no-store' });
+  async function hit(poll, key) {
+    const r = await fetch(`${API}/hit/${ns(poll)}/${key}`, { cache: 'no-store' });
     if (!r.ok) throw new Error('hit ' + r.status);
     const j = await r.json(); return Number(j.value) || 0;
   }
 
+  /* ---------- list API (options added by voters) ---------- */
+  const LIST_API = 'https://textdb.dev/api/data/';
+  const MAX_ADDED = 12, MAX_ADD_LEN = 40;
+  function hash(s) { let h = 0x811c9dc5; for (const ch of s) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(36); }
+  const norm = (s) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+  function cleanAdded(raw) {
+    try {
+      const j = JSON.parse(raw); const arr = Array.isArray(j && j.o) ? j.o : []; const seen = new Set(); const out = [];
+      for (const s of arr) { if (typeof s !== 'string') continue; const v = s.trim().slice(0, MAX_ADD_LEN); if (!v || seen.has(norm(v))) continue; seen.add(norm(v)); out.push(v); if (out.length >= MAX_ADDED) break; }
+      return out;
+    } catch { return []; }
+  }
+  async function withRetry(fn) { try { return await fn(); } catch (e) { await new Promise(r => setTimeout(r, 400 + Math.random() * 400)); return fn(); } }
+  function getAdded(poll) {
+    return withRetry(async () => {
+      const r = await fetch(LIST_API + ns(poll), { cache: 'no-store' });
+      if (r.status === 404) return [];
+      if (!r.ok) throw new Error('list ' + r.status);
+      const txt = await r.text(); return txt.trim() ? cleanAdded(txt) : [];
+    });
+  }
+  function putAdded(poll, list) {
+    return withRetry(async () => {
+      const r = await fetch(LIST_API + ns(poll), { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ o: list }) });
+      if (!r.ok) throw new Error('put ' + r.status);
+    });
+  }
+
   /* ---------- poll view ---------- */
-  let current = null, counts = [], timer = 0, online = true, voting = false;
-  function picked(poll) { return store.get('lp_vote_' + poll.i, null); }
+  let current = null, added = [], counts = {}, timer = 0, online = true, voting = false;
+  function allOptions(poll) {
+    const base = poll.o.map((label, i) => ({ label, key: 'opt' + i }));
+    const taken = new Set(poll.o.map(norm));
+    const extra = added.filter(l => !taken.has(norm(l))).map(label => ({ label, key: 'add-' + hash(norm(label)), added: true }));
+    return base.concat(extra);
+  }
+  function picked(poll) { const v = store.get('lp_vote_' + poll.i, null); return typeof v === 'number' ? 'opt' + v : v; }
   function revealed(poll) { return picked(poll) !== null || store.get('lp_peek_' + poll.i, false); }
 
   function renderCard() {
     const poll = current; if (!poll) return;
-    const total = counts.reduce((a, b) => a + b, 0), max = Math.max(0, ...counts);
+    const opts = allOptions(poll);
+    const vals = opts.map(o => counts[o.key] || 0);
+    const total = vals.reduce((a, b) => a + b, 0), max = Math.max(0, ...vals);
     const my = picked(poll), show = revealed(poll);
+    const mine = opts.find(o => o.key === my);
     const head = el('div', { class: 'card-head' },
       el('h2', { text: poll.q }),
       el('div', { class: 'meta' },
         el('span', { class: 'pill', text: total + '표' }),
         el('span', { text: timeAgo(poll.t) + ' 시작' }),
-        my !== null ? el('span', { text: '· 당신은 「' + poll.o[my] + '」' }) : null));
+        poll.a ? el('span', { text: '· 선택지 추가 가능' }) : null,
+        mine ? el('span', { text: '· 당신은 「' + mine.label + '」' }) : null));
     const options = el('div', { class: 'options' });
-    poll.o.forEach((label, i) => {
-      const c = counts[i] || 0, pct = total ? Math.round(c / total * 100) : 0;
-      const isMine = my === i, lead = show && total > 0 && c === max;
+    opts.forEach((o, i) => {
+      const c = vals[i], pct = total ? Math.round(c / total * 100) : 0;
+      const isMine = my === o.key, lead = show && total > 0 && c === max;
       options.append(el('button', {
         type: 'button', class: 'option' + (isMine ? ' picked' : ''), style: '--oc:' + COLORS[i % COLORS.length],
-        disabled: my !== null, 'aria-pressed': isMine ? 'true' : 'false', 'aria-label': label + (show ? ', ' + c + '표 ' + pct + '%' : ''),
-        onclick: (ev) => vote(i, ev),
+        disabled: my !== null, 'aria-pressed': isMine ? 'true' : 'false', 'aria-label': o.label + (show ? ', ' + c + '표 ' + pct + '%' : ''),
+        onclick: (ev) => vote(o.key, ev),
       },
         el('span', { class: 'bar', style: 'width:' + (show ? pct : 0) + '%' }),
         el('span', { class: 'row' },
           el('span', { class: 'mark', text: isMine ? '✓' : '' }),
-          el('span', { class: 'label', text: label }),
+          el('span', { class: 'label', text: o.label }),
+          o.added ? el('span', { class: 'tag', text: '추가됨' }) : null,
           lead ? el('span', { class: 'crown', text: '👑' }) : null,
           show ? el('span', { class: 'num' }, el('span', { text: pct + '%' }), el('small', { text: c + '표' })) : null)));
     });
-    let hint = my !== null ? '투표 완료! 결과는 6초마다 새로고침돼요' : show ? '결과만 보는 중. 투표하려면 선택지를 누르세요' : '골라야 결과가 보여요 👀';
+    let hint = my !== null ? '투표 완료! 결과는 6초마다 새로고침돼요' : show ? '결과만 보는 중. 투표하려면 선택지를 누르세요' : poll.a ? '골라야 결과가 보여요. 없으면 아래에서 추가! 👇' : '골라야 결과가 보여요 👀';
     const foot = el('div', { class: 'card-foot' }, el('span', { class: 'hint', text: hint }), el('span', { class: 'spacer' }));
     if (!show) foot.append(el('button', { class: 'btn ghost small', type: 'button', text: '결과만 볼래요', onclick: () => { store.set('lp_peek_' + poll.i, true); renderCard(); } }));
     foot.append(el('button', { class: 'btn ghost small', type: 'button', text: '↻ 새로고침', onclick: () => refresh(true) }));
     $('card').replaceChildren(el('div', { class: 'sticker', 'aria-hidden': 'true', text: poll.e || '🗳️' }), head, options, foot);
+    const full = poll.a && opts.length - poll.o.length >= MAX_ADDED;
+    $('addBox').hidden = !poll.a; $('addBtn').disabled = full; $('addInput').disabled = full;
+    $('addHint').textContent = full ? '선택지가 꽉 찼어요 (최대 ' + MAX_ADDED + '개 추가)' : my !== null ? '이미 투표했지만 선택지는 더 제안할 수 있어요.' : '추가한 선택지는 모두에게 바로 보여요.';
   }
 
   async function refresh(manual) {
     const poll = current; if (!poll) return;
     try {
-      const next = await Promise.all(poll.o.map((_, i) => getCount(poll, i)));
+      if (poll.a) { const list = await getAdded(poll); if (current !== poll) return; added = list; }
+      const opts = allOptions(poll);
+      const vals = await Promise.all(opts.map(o => getCount(poll, o.key)));
       if (current !== poll) return;
-      counts = next; setOnline(true); renderCard();
+      counts = Object.fromEntries(opts.map((o, i) => [o.key, vals[i]]));
+      setOnline(true); renderCard();
       if (manual) toast('최신 결과로 갱신했어요');
     } catch { setOnline(false); if (manual) toast('집계 서버가 응답하지 않아요. 잠시 후 다시 시도해 주세요'); }
   }
@@ -366,20 +431,43 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   function schedule() { clearInterval(timer); timer = setInterval(() => { if (!document.hidden) refresh(false); }, REFRESH_MS); }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && current) refresh(false); });
 
-  async function vote(i, ev) {
+  async function vote(key, ev) {
     const poll = current; if (!poll || voting || picked(poll) !== null) return;
     voting = true;
     const target = ev.currentTarget; const r = target.getBoundingClientRect();
     try {
-      const v = await hit(poll, i);
+      const v = await hit(poll, key);
       if (current !== poll) return;
-      counts[i] = Math.max(v, (counts[i] || 0) + 1);
-      store.set('lp_vote_' + poll.i, i);
+      counts[key] = Math.max(v, (counts[key] || 0) + 1);
+      store.set('lp_vote_' + poll.i, key);
       renderCard(); burst(r.left + r.width / 2, r.top + r.height / 2);
       toast('투표 완료! 🎉'); refresh(false);
     } catch { toast('투표가 전송되지 않았어요. 인터넷 연결을 확인하고 다시 눌러주세요'); }
     finally { voting = false; }
   }
+
+  let adding = false;
+  $('addBox').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const poll = current; if (!poll || !poll.a || adding) return;
+    const input = $('addInput'); const v = input.value.trim().slice(0, MAX_ADD_LEN);
+    if (v.length < 1) { toast('선택지 이름을 적어주세요'); input.focus(); return; }
+    if (allOptions(poll).some(o => norm(o.label) === norm(v))) { toast('이미 있는 선택지예요'); return; }
+    adding = true; $('addBtn').disabled = true;
+    try {
+      let latest = await getAdded(poll);
+      if (latest.length >= MAX_ADDED) { toast('선택지가 꽉 찼어요 (최대 ' + MAX_ADDED + '개 추가)'); added = latest; renderCard(); return; }
+      if (!latest.some(l => norm(l) === norm(v)) && !poll.o.some(l => norm(l) === norm(v))) await putAdded(poll, latest.concat(v));
+      let verify = await getAdded(poll);
+      if (!verify.some(l => norm(l) === norm(v))) { await putAdded(poll, verify.concat(v)); verify = await getAdded(poll); }
+      if (current !== poll) return;
+      added = verify; input.value = '';
+      await refresh(false);
+      toast(picked(poll) === null ? '추가됐어요! 이제 골라보세요 🎉' : '선택지를 추가했어요 🎉');
+      const r = $('addBox').getBoundingClientRect(); burst(r.left + r.width / 2, r.top);
+    } catch { toast('추가가 저장되지 않았어요. 잠시 후 다시 시도해 주세요'); }
+    finally { adding = false; renderCard(); }
+  });
 
   function renderShare(poll) {
     const url = location.origin + location.pathname + '#p=' + b64.enc(poll);
@@ -399,8 +487,8 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     const valid = poll && typeof poll.q === 'string' && Array.isArray(poll.o) && poll.o.length >= 2 && poll.o.length <= 6 && /^[a-z0-9]{6,14}$/.test(String(poll.i));
     clearInterval(timer);
     if (valid) {
-      poll.o = poll.o.map(s => String(s).slice(0, 60)); poll.q = poll.q.slice(0, 120); poll.e = String(poll.e || '🗳️').slice(0, 4); poll.t = Number(poll.t) || Date.now();
-      current = poll; counts = poll.o.map(() => 0);
+      poll.o = poll.o.map(s => String(s).slice(0, 60)); poll.q = poll.q.slice(0, 120); poll.e = String(poll.e || '🗳️').slice(0, 4); poll.t = Number(poll.t) || Date.now(); poll.a = poll.a ? 1 : 0;
+      current = poll; added = []; counts = {}; $('addInput').value = '';
       $('home').hidden = true; $('poll').hidden = false; $('pollActions').hidden = false; $('live').hidden = false; $('cheerBar').hidden = false;
       document.title = poll.e + ' ' + poll.q + ' · 번개 투표';
       renderCard(); renderShare(poll); refresh(false); schedule();
@@ -408,7 +496,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     } else {
       if (m) toast('투표 링크가 올바르지 않아요');
       current = null;
-      $('home').hidden = false; $('poll').hidden = true; $('pollActions').hidden = true; $('live').hidden = true; $('cheerBar').hidden = true;
+      $('home').hidden = false; $('poll').hidden = true; $('addBox').hidden = true; $('pollActions').hidden = true; $('live').hidden = true; $('cheerBar').hidden = true;
       document.title = '번개 투표';
       resetForm(); renderMine();
     }
